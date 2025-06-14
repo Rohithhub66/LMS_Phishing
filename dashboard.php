@@ -2,6 +2,9 @@
 session_start();
 require 'db.php';
 
+// Include global header (profile info, logout, etc.)
+include 'header.php';
+
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit;
@@ -55,20 +58,18 @@ $isAdmin = $_SESSION['user']['role'] === 'admin';
   <title>Dashboard - LMS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="header.css">
   <style>
-    body {
-      background-color: #121212;
-      color: #fff;
-    }
     .sidebar {
       height: 100vh;
       background-color: #1e1e1e;
       width: 250px;
       transition: width 0.3s ease;
       position: fixed;
-      top: 0;
+      top: 106px; /* Offset for header + breadcrumb */
       left: 0;
       overflow-x: hidden;
+      z-index: 100;
     }
     .sidebar.collapsed {
       width: 60px;
@@ -92,6 +93,7 @@ $isAdmin = $_SESSION['user']['role'] === 'admin';
       margin-left: 250px;
       padding: 20px;
       transition: margin-left 0.3s ease;
+      margin-top: 110px; /* Offset for header + breadcrumb */
     }
     .collapsed + .content {
       margin-left: 60px;
@@ -114,11 +116,57 @@ $isAdmin = $_SESSION['user']['role'] === 'admin';
       color: #ccc;
     }
     .domain-card {
-      background: #2a2a2a;
+      background: #eebbc3;
+      color: #232946;
       padding: 20px;
       border-radius: 10px;
       margin-bottom: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+    .domain-card h5, .domain-card p, .domain-card a {
+      color: #232946 !important;
+    }
+    .submenu {
+      padding-left: 20px;
+      display: none;
+    }
+    .sidebar .submenu-link {
+      color: #bbb;
+      font-size: 0.96em;
+      padding-left: 33px;
+      display: block;
+      margin-top: 2px;
+      margin-bottom: 2px;
+      background: none;
+      border: none;
+      text-align: left;
+      width: 100%;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+    .sidebar .submenu-link:hover {
+      color: #fff;
+      background: #343a40;
+    }
+    .sidebar .nav-link .fa-caret-down {
+      float: right;
+      margin-right: 10px;
+      transition: transform 0.2s;
+    }
+    .sidebar .nav-link[aria-expanded="true"] .fa-caret-down {
+      transform: rotate(180deg);
+    }
+    .sidebar .nav-link.training-parent {
+      cursor: pointer;
+      user-select: none;
+    }
+    @media (max-width: 900px) {
+      .sidebar { top: 106px; }
+      .content { margin-top: 110px; }
+    }
+    @media (max-width: 600px) {
+      .sidebar { top: 106px; }
+      .content { margin-top: 110px; }
     }
   </style>
 </head>
@@ -132,19 +180,28 @@ $isAdmin = $_SESSION['user']['role'] === 'admin';
     <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
     <nav class="nav flex-column mt-4">
       <a class="nav-link active" href="#" data-bs-toggle="tooltip" title="Dashboard"><i class="fas fa-home"></i><span class="link-text"> Dashboard</span></a>
-      <a class="nav-link" href="training_framework.php" data-bs-toggle="tooltip" title="Training Framework"><i class="fas fa-cubes"></i><span class="link-text"> Training Framework</span></a>
-      <a class="nav-link" href="add_training.php" data-bs-toggle="tooltip" title="Add Training"><i class="fas fa-book"></i><span class="link-text"> Add Training</span></a>
-      <a class="nav-link" href="assign_training.php" data-bs-toggle="tooltip" title="Assign Training"><i class="fas fa-paper-plane"></i><span class="link-text"> Assign Training</span></a>
+
+      <!-- Training Collapsible Menu -->
+      <a class="nav-link training-parent" href="javascript:void(0);" aria-expanded="false" id="trainingMenuParent">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <span class="link-text"> Training</span>
+        <i class="fas fa-caret-down"></i>
+      </a>
+      <div class="submenu" id="trainingSubMenu">
+        <a class="submenu-link" href="training_framework.php" data-bs-toggle="tooltip" title="Training Framework"><i class="fas fa-cubes"></i> Training Framework</a>
+        <a class="submenu-link" href="add_training.php" data-bs-toggle="tooltip" title="Add Training"><i class="fas fa-book"></i> Add Training</a>
+        <a class="submenu-link" href="assign_training.php" data-bs-toggle="tooltip" title="Assign Training"><i class="fas fa-paper-plane"></i> Assign Training</a>
+        <a class="submenu-link" href="view_assignments.php" data-bs-toggle="tooltip" title="Training Compliance"><i class="fas fa-check-circle"></i> Compliance</a>
+      </div>
+
       <a class="nav-link" href="phishing_simulation2.php" data-bs-toggle="tooltip" title="Create Phishing Campaign"><i class="fas fa-bullseye"></i><span class="link-text"> Create Campaign</span></a>
       <a class="nav-link" href="campaign_report.php" data-bs-toggle="tooltip" title="Phishing Reports"><i class="fas fa-chart-line"></i><span class="link-text"> Reports</span></a>
-      <a class="nav-link" href="view_assignments.php" data-bs-toggle="tooltip" title="Training Compliance"><i class="fas fa-check-circle"></i><span class="link-text"> Compliance</span></a>
       <a class="nav-link" href="threat_intel.php" data-bs-toggle="tooltip" title="Threat Intel"><i class="fas fa-shield-alt"></i><span class="link-text"> Threat Intel</span></a>
       <a class="nav-link" href="infra_manage.php" data-bs-toggle="tooltip" title="Infra Management"><i class="fas fa-server"></i><span class="link-text"> Infra</span></a>
     </nav>
   </div>
 
   <div class="content">
-    <h2>Dashboard</h2>
     <?php if ($backfillMessage): ?>
       <p class="text-success fw-bold"><?= htmlspecialchars($backfillMessage) ?></p>
     <?php endif; ?>
@@ -191,11 +248,27 @@ $isAdmin = $_SESSION['user']['role'] === 'admin';
     document.querySelector('.content').classList.toggle('collapsed');
     const texts = document.querySelectorAll('.link-text');
     texts.forEach(el => el.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'inline');
+    // Hide submenu if sidebar is collapsed
+    const submenu = document.getElementById('trainingSubMenu');
+    if (sidebar.classList.contains('collapsed')) {
+      submenu.style.display = 'none';
+      document.getElementById('trainingMenuParent').setAttribute('aria-expanded', 'false');
+    }
   }
+
+  // Collapsible Training menu
+  document.getElementById('trainingMenuParent').addEventListener('click', function () {
+    const submenu = document.getElementById('trainingSubMenu');
+    const expanded = this.getAttribute('aria-expanded') === 'true';
+    submenu.style.display = expanded ? 'none' : 'block';
+    this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  });
+
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
   });
 </script>
 </body>
+</html>
 </html>
