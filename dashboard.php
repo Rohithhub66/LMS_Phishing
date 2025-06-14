@@ -2,9 +2,6 @@
 session_start();
 require 'db.php';
 
-// Include global header (profile info, logout, etc.)
-include 'header.php';
-
 if (!isset($_SESSION['user'])) {
     header("Location: index.php");
     exit;
@@ -58,217 +55,174 @@ $isAdmin = $_SESSION['user']['role'] === 'admin';
   <title>Dashboard - LMS</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="header.css">
   <style>
     .sidebar {
+      width: 200px;
       height: 100vh;
-      background-color: #1e1e1e;
-      width: 250px;
-      transition: width 0.3s ease;
+      background-color: #111827;
+      color: white;
+      padding: 20px 0;
       position: fixed;
-      top: 106px; /* Offset for header + breadcrumb */
+      top: 0;
       left: 0;
-      overflow-x: hidden;
       z-index: 100;
     }
-    .sidebar.collapsed {
-      width: 60px;
-    }
     .sidebar .nav-link {
-      color: #ddd;
+      color: #E5E7EB;
       white-space: nowrap;
+      padding: 10px 20px;
+      display: block;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
     }
+    .sidebar .nav-link.active,
     .sidebar .nav-link:hover {
-      background-color: #333;
+      background-color: #1E40AF;
       color: #fff;
-    }
-    .sidebar .active {
-      background-color: #333;
-      font-weight: bold;
     }
     .sidebar i {
-      width: 30px;
-    }
-    .content {
-      margin-left: 250px;
-      padding: 20px;
-      transition: margin-left 0.3s ease;
-      margin-top: 110px; /* Offset for header + breadcrumb */
-    }
-    .collapsed + .content {
-      margin-left: 60px;
-    }
-    .toggle-btn {
-      position: absolute;
-      top: 10px;
-      right: -25px;
-      background: #1e1e1e;
-      border-radius: 50%;
-      border: none;
-      color: #fff;
-      width: 30px;
-      height: 30px;
+      width: 28px;
     }
     .profile {
-      padding: 10px;
+      padding: 10px 0;
       background: #222;
       text-align: center;
       color: #ccc;
     }
-    .domain-card {
-      background: #eebbc3;
-      color: #232946;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.08);
-    }
-    .domain-card h5, .domain-card p, .domain-card a {
-      color: #232946 !important;
-    }
-    .submenu {
-      padding-left: 20px;
-      display: none;
-    }
-    .sidebar .submenu-link {
-      color: #bbb;
-      font-size: 0.96em;
-      padding-left: 33px;
-      display: block;
-      margin-top: 2px;
-      margin-bottom: 2px;
-      background: none;
-      border: none;
-      text-align: left;
-      width: 100%;
-      white-space: nowrap;
-      text-decoration: none;
-    }
-    .sidebar .submenu-link:hover {
+    .sidebar .menu-parent {
+      font-weight: bold;
+      padding: 10px 20px 5px 20px;
       color: #fff;
-      background: #343a40;
-    }
-    .sidebar .nav-link .fa-caret-down {
-      float: right;
-      margin-right: 10px;
-      transition: transform 0.2s;
-    }
-    .sidebar .nav-link[aria-expanded="true"] .fa-caret-down {
-      transform: rotate(180deg);
-    }
-    .sidebar .nav-link.training-parent {
+      letter-spacing: 1px;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      font-size: 1.04em;
+      border-bottom: 1px solid #2c3a55;
       cursor: pointer;
       user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sidebar .menu-parent .fa-chevron-down,
+    .sidebar .menu-parent .fa-chevron-right {
+      font-size: 0.8em;
+      margin-left: 8px;
+      transition: transform 0.2s;
+    }
+    .sidebar .submenu {
+      padding-left: 0;
+      margin-bottom: 15px;
+      margin-top: 5px;
+      display: none;
+    }
+    .sidebar .submenu.show {
+      display: block;
+    }
+    .sidebar .submenu .nav-link {
+      padding-left: 38px;
+      font-weight: 400;
+      font-size: 0.98em;
     }
     @media (max-width: 900px) {
-      .sidebar { top: 106px; }
-      .content { margin-top: 110px; }
+      .sidebar { width: 100px; }
+      .main { margin-left: 120px; }
     }
     @media (max-width: 600px) {
-      .sidebar { top: 106px; }
-      .content { margin-top: 110px; }
+      .sidebar { width: 100%; height: auto; position: relative; }
+      .main { margin-left: 0; padding: 10px; }
     }
   </style>
 </head>
 <body>
-<div class="d-flex">
-  <div class="sidebar" id="sidebar">
-    <div class="profile">
-      <i class="fas fa-user-circle fa-2x"></i><br>
-      <small><?= htmlspecialchars($_SESSION['user']['name']) ?></small>
-    </div>
-    <button class="toggle-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-    <nav class="nav flex-column mt-4">
-      <a class="nav-link active" href="#" data-bs-toggle="tooltip" title="Dashboard"><i class="fas fa-home"></i><span class="link-text"> Dashboard</span></a>
-
-      <!-- Training Collapsible Menu -->
-      <a class="nav-link training-parent" href="javascript:void(0);" aria-expanded="false" id="trainingMenuParent">
-        <i class="fas fa-chalkboard-teacher"></i>
-        <span class="link-text"> Training</span>
-        <i class="fas fa-caret-down"></i>
-      </a>
-      <div class="submenu" id="trainingSubMenu">
-        <a class="submenu-link" href="training_framework.php" data-bs-toggle="tooltip" title="Training Framework"><i class="fas fa-cubes"></i> Training Framework</a>
-        <a class="submenu-link" href="add_training.php" data-bs-toggle="tooltip" title="Add Training"><i class="fas fa-book"></i> Add Training</a>
-        <a class="submenu-link" href="assign_training.php" data-bs-toggle="tooltip" title="Assign Training"><i class="fas fa-paper-plane"></i> Assign Training</a>
-        <a class="submenu-link" href="view_assignments.php" data-bs-toggle="tooltip" title="Training Compliance"><i class="fas fa-check-circle"></i> Compliance</a>
-      </div>
-
-      <a class="nav-link" href="phishing_simulation2.php" data-bs-toggle="tooltip" title="Create Phishing Campaign"><i class="fas fa-bullseye"></i><span class="link-text"> Create Campaign</span></a>
-      <a class="nav-link" href="campaign_report.php" data-bs-toggle="tooltip" title="Phishing Reports"><i class="fas fa-chart-line"></i><span class="link-text"> Reports</span></a>
-      <a class="nav-link" href="threat_intel.php" data-bs-toggle="tooltip" title="Threat Intel"><i class="fas fa-shield-alt"></i><span class="link-text"> Threat Intel</span></a>
-      <a class="nav-link" href="infra_manage.php" data-bs-toggle="tooltip" title="Infra Management"><i class="fas fa-server"></i><span class="link-text"> Infra</span></a>
-    </nav>
+<?php include 'header.php'; ?>
+<div class="sidebar" id="sidebar">
+  <div class="profile">
+    <i class="fas fa-user-circle fa-2x"></i><br>
+    <small><?= htmlspecialchars($_SESSION['user']['name']) ?></small>
   </div>
-
-  <div class="content">
-    <?php if ($backfillMessage): ?>
-      <p class="text-success fw-bold"><?= htmlspecialchars($backfillMessage) ?></p>
-    <?php endif; ?>
-
-    <div class="row">
-      <div class="col-md-3">
-        <div class="domain-card">
-          <h5>Training & Awareness</h5>
-          <p><?= $completedTrainings ?> / <?= $totalAssignments ?> completed</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="domain-card">
-          <h5>Phishing Simulation</h5>
-          <p><?= $totalCampaigns ?> campaigns / <?= $totalClicks ?> clicks</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="domain-card">
-          <h5>Threat Intelligence</h5>
-          <p><a href="threat_intel.php" class="btn btn-sm btn-light">View Threats</a></p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="domain-card">
-          <h5>Change Management</h5>
-          <p><a href="#" class="btn btn-sm btn-light">Coming Soon</a></p>
-        </div>
-      </div>
-    </div>
-
-    <form method="post" class="mt-4">
-      <input type="submit" name="backfill_campaign" value="🛠 Backfill Missing Campaign IDs" class="btn btn-warning">
-    </form>
-    <a href="logout.php" class="btn btn-danger mt-3">Logout</a>
+  <!-- Parent menu for Training (collapsible) -->
+  <div class="menu-parent" id="trainingMenuToggle">
+    <span><i class="fas fa-graduation-cap"></i> Training</span>
+    <i class="fas fa-chevron-down" id="trainingChevron"></i>
   </div>
+  <div class="submenu" id="trainingSubMenu">
+    <a class="nav-link" href="training_framework.php" data-bs-toggle="tooltip" title="Training Framework"><i class="fas fa-cubes"></i> Training Framework</a>
+    <a class="nav-link" href="add_training.php" data-bs-toggle="tooltip" title="Add Training"><i class="fas fa-book"></i> Add Training</a>
+    <a class="nav-link" href="assign_training.php" data-bs-toggle="tooltip" title="Assign Training"><i class="fas fa-paper-plane"></i> Assign Training</a>
+    <a class="nav-link" href="view_assignments.php" data-bs-toggle="tooltip" title="Training Compliance"><i class="fas fa-check-circle"></i> Compliance</a>
+  </div>
+  <!-- Other menu items -->
+  <a class="nav-link" href="phishing_simulation2.php" data-bs-toggle="tooltip" title="Create Phishing Campaign"><i class="fas fa-bullseye"></i> Create Campaign</a>
+  <a class="nav-link" href="campaign_report.php" data-bs-toggle="tooltip" title="Phishing Reports"><i class="fas fa-chart-line"></i> Reports</a>
+  <a class="nav-link" href="threat_intel.php" data-bs-toggle="tooltip" title="Threat Intel"><i class="fas fa-shield-alt"></i> Threat Intel</a>
+  <a class="nav-link" href="infra_manage.php" data-bs-toggle="tooltip" title="Infra Management"><i class="fas fa-server"></i> Infra</a>
+</div>
+
+<div class="main">
+  <?php if ($backfillMessage): ?>
+    <p class="text-success fw-bold"><?= htmlspecialchars($backfillMessage) ?></p>
+  <?php endif; ?>
+
+  <div class="card-container">
+    <div class="domain-card card">
+      <h5>Training & Awareness</h5>
+      <p><?= $completedTrainings ?> / <?= $totalAssignments ?> completed</p>
+    </div>
+    <div class="domain-card card">
+      <h5>Phishing Simulation</h5>
+      <p><?= $totalCampaigns ?> campaigns / <?= $totalClicks ?> clicks</p>
+    </div>
+    <div class="domain-card card">
+      <h5>Threat Intelligence</h5>
+      <p><a href="threat_intel.php" class="btn btn-sm btn-light">View Threats</a></p>
+    </div>
+    <div class="domain-card card">
+      <h5>Change Management</h5>
+      <p><a href="#" class="btn btn-sm btn-light">Coming Soon</a></p>
+    </div>
+  </div>
+  <form method="post" class="mt-4">
+    <input type="submit" name="backfill_campaign" value="🛠 Backfill Missing Campaign IDs" class="btn warning">
+  </form>
+  <a href="logout.php" class="btn danger mt-3">Logout</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    sidebar.classList.toggle('collapsed');
-    document.querySelector('.content').classList.toggle('collapsed');
-    const texts = document.querySelectorAll('.link-text');
-    texts.forEach(el => el.style.display = sidebar.classList.contains('collapsed') ? 'none' : 'inline');
-    // Hide submenu if sidebar is collapsed
-    const submenu = document.getElementById('trainingSubMenu');
-    if (sidebar.classList.contains('collapsed')) {
-      submenu.style.display = 'none';
-      document.getElementById('trainingMenuParent').setAttribute('aria-expanded', 'false');
+  // Collapsible Trainings menu
+  const trainingMenuToggle = document.getElementById('trainingMenuToggle');
+  const trainingSubMenu = document.getElementById('trainingSubMenu');
+  const trainingChevron = document.getElementById('trainingChevron');
+  let trainingMenuOpen = true;
+
+  function showTrainingMenu(open) {
+    if (open) {
+      trainingSubMenu.classList.add('show');
+      trainingChevron.classList.remove('fa-chevron-right');
+      trainingChevron.classList.add('fa-chevron-down');
+    } else {
+      trainingSubMenu.classList.remove('show');
+      trainingChevron.classList.remove('fa-chevron-down');
+      trainingChevron.classList.add('fa-chevron-right');
     }
   }
 
-  // Collapsible Training menu
-  document.getElementById('trainingMenuParent').addEventListener('click', function () {
-    const submenu = document.getElementById('trainingSubMenu');
-    const expanded = this.getAttribute('aria-expanded') === 'true';
-    submenu.style.display = expanded ? 'none' : 'block';
-    this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  // Initialize menu to open by default
+  showTrainingMenu(true);
+
+  trainingMenuToggle.addEventListener('click', function() {
+    trainingMenuOpen = !trainingMenuOpen;
+    showTrainingMenu(trainingMenuOpen);
   });
 
+  // Bootstrap tooltips
   var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl);
   });
 </script>
 </body>
-</html>
 </html>
